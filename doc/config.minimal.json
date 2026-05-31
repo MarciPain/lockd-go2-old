@@ -1,0 +1,34 @@
+{
+  "_comment": "lockd2 minimális konfig – plain HTTP, nincs ACL, egyetlen zár",
+
+  "mqtt": {
+    "broker":        "mqtt.example.com",
+    "port":          8883,
+    "username":      "bXF0dC11c2VybmFtZQ==",
+    "password":      "dGlrdG9zLWplbHN6bw==",
+    "ca_file":       "/etc/ssl/certs/mqtt-ca.pem",
+    "client_id":     "lockd2-dev",
+    "topic_state":   "locks/+/state",
+    "topic_batt":    "locks/+/batt",
+    "topic_cmd_tpl": "locks/%s/cmd"
+  },
+
+  "http": {
+    "listen":         "0.0.0.0:8884",
+    "external_url":   "http://lockd.reas.hu:8089",
+    "auth_file":      "/etc/lockd2/auth_keys",
+    "audit_file":     "/etc/lockd2/audit.log",
+    "admin_key_file": "/etc/lockd2/admin_key"
+  },
+
+  "locks": [
+    {
+      "id":          "frontdoor",
+      "name":        "Bejárati ajtó",
+      "type":        "TOGGLE",
+      "has_battery": true
+    }
+  ],
+
+  "acl": []
+}

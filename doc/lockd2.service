@@ -1,0 +1,32 @@
+[Unit]
+Description=lockd2 – MQTT/HTTP okoszár gateway
+Documentation=file:/usr/local/share/doc/lockd2/usage.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lockd2
+Group=lockd2
+
+ExecStart=/usr/local/bin/lockd2 -config /etc/lockd2/lockd2.json
+ExecReload=/bin/kill -HUP $MAINPID
+
+Restart=on-failure
+RestartSec=5s
+
+# Logok a journald-be kerülnek; saját log fájl helyett a journalctl -u lockd2 használható.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lockd2
+
+# Biztonság
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/etc/lockd2
+ReadOnlyPaths=/etc/ssl
+
+[Install]
+WantedBy=multi-user.target

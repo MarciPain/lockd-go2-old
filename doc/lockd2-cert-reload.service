@@ -1,0 +1,7 @@
+[Unit]
+Description=lockd2 TLS tanúsítvány újratöltés (certbot deploy hook)
+After=lockd2.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl reload lockd2.service

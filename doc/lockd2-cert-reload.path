@@ -1,0 +1,11 @@
+[Unit]
+Description=lockd2 TLS cert figyelő – újratölt ha a certbot megújítja
+After=lockd2.service
+
+[Path]
+# A certbot által megújított tanúsítványt figyeli.
+# Ha a fájl megváltozik, a lockd2-cert-reload.service fut le.
+PathChanged=/etc/lockd2/tls/server.crt
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,241 @@
+openapi: "3.0.3"
+info:
+  title: lockd2 API
+  version: "1.0"
+  description: |
+    MQTT–HTTP gateway okoszárakhoz.
+
+    ## Hitelesítés
+    - **API kulcs** (`X-API-Key`): normál végpontokhoz
+    - **Admin kulcs** (`X-Admin-Key`): `/v1/admin/*` végpontokhoz
+
+servers:
+  - url: "https://lockd.reas.hu:8090"
+    description: Éles szerver
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    AdminKey:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+
+  schemas:
+    Lock:
+      type: object
+      properties:
+        id:          { type: string, example: frontdoor }
+        name:        { type: string, example: "Bejárati ajtó" }
+        type:        { type: string, enum: [TOGGLE, STRIKE, PULSE] }
+        has_battery: { type: boolean }
+        state:       { type: string, example: "Zárva" }
+        battery:     { type: string, example: "87%" }
+        updated_at:  { type: string, format: date-time }
+
+    LockState:
+      type: object
+      properties:
+        lock_id:    { type: string, example: frontdoor }
+        state:      { type: string, example: "Zárva" }
+        battery:    { type: string, example: "87%" }
+        updated_at: { type: string, format: date-time }
+
+    ClientConfig:
+      type: object
+      properties:
+        url:   { type: string, example: "http://lockd.reas.hu:8089" }
+        token: { type: string, example: "1748123456789-a3f9c2..." }
+
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      description: MQTT kapcsolat állapota. Hitelesítés nélkül elérhető.
+      tags: [System]
+      responses:
+        "200":
+          description: Szerver és MQTT kapcsolat rendben
+          content:
+            text/plain:
+              schema: { type: string, example: ok }
+        "503":
+          description: MQTT kapcsolat megszakadt
+          content:
+            text/plain:
+              schema: { type: string, example: "mqtt disconnected" }
+
+  /v1/locks:
+    get:
+      summary: Zárak listája
+      description: A hitelesített felhasználó számára elérhető összes zár állapottal.
+      tags: [Locks]
+      security:
+        - ApiKey: []
+      responses:
+        "200":
+          description: Zárak listája
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  locks:
+                    type: array
+                    items: { $ref: "#/components/schemas/Lock" }
+        "401":
+          description: Hiányzó vagy érvénytelen API kulcs
+
+  /v1/locks/{id}:
+    get:
+      summary: Egy zár állapota
+      tags: [Locks]
+      security:
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+          description: Zár azonosítója
+          example: frontdoor
+      responses:
+        "200":
+          description: Zár állapota
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LockState" }
+        "401": { description: Hiányzó vagy érvénytelen API kulcs }
+        "403": { description: Nincs ACL jog ehhez a zárhoz }
+        "404": { description: Ismeretlen zár ID }
+
+  /v1/locks/{id}/cmd:
+    post:
+      summary: Parancs küldése zárnak
+      description: |
+        MQTT-n keresztül parancsot küld a zárnak.
+
+        Érvényes parancsok típusonként:
+
+        | Parancs | TOGGLE | STRIKE | PULSE |
+        |---------|--------|--------|-------|
+        | OPEN    | ✓      | ✓      | ✓     |
+        | LOCK    | ✓      | ✗      | ✗     |
+      tags: [Locks]
+      security:
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+          example: frontdoor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cmd]
+              properties:
+                cmd:
+                  type: string
+                  enum: [OPEN, LOCK]
+                  example: OPEN
+      responses:
+        "200":
+          description: Parancs sikeresen elküldve
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+        "400": { description: Érvénytelen JSON vagy nem támogatott parancs ehhez a zártípushoz }
+        "401": { description: Hiányzó vagy érvénytelen API kulcs }
+        "403": { description: Nincs ACL jog }
+        "404": { description: Ismeretlen zár ID }
+        "500": { description: MQTT publish hiba }
+
+  /v1/admin/gen-key:
+    post:
+      summary: API kulcs generálása
+      description: Új API kulcsot generál, hozzáfűzi az auth_keys fájlhoz, és visszaadja a kliens JSON-t.
+      tags: [Admin]
+      security:
+        - AdminKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+                  example: alice
+      responses:
+        "200":
+          description: Generált kliens konfig (mentsd el, a token többé nem kérhető le)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClientConfig" }
+        "400": { description: Hiányzó felhasználónév }
+        "401": { description: Hiányzó vagy érvénytelen admin kulcs }
+        "500": { description: auth_keys fájl írási hiba }
+
+  /v1/admin/keys:
+    get:
+      summary: Felhasználók listája
+      description: Az auth_keys fájlban szereplő felhasználónevek listája.
+      tags: [Admin]
+      security:
+        - AdminKey: []
+      responses:
+        "200":
+          description: Felhasználók listája
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items: { type: string }
+                    example: [alice, bob, admin]
+        "401": { description: Hiányzó vagy érvénytelen admin kulcs }
+
+  /v1/admin/keys/{username}:
+    delete:
+      summary: Felhasználó kulcsának törlése
+      description: Eltávolítja a felhasználó sorát az auth_keys fájlból. A felhasználó azonnal elveszíti a hozzáférést.
+      tags: [Admin]
+      security:
+        - AdminKey: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema: { type: string }
+          example: alice
+      responses:
+        "200":
+          description: Sikeres törlés
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean, example: true }
+        "401": { description: Hiányzó vagy érvénytelen admin kulcs }
+        "404": { description: Felhasználó nem található }
+        "500": { description: auth_keys fájl írási hiba }

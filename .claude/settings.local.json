@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build *)",
+      "Bash(go vet *)",
+      "Bash(go tool *)",
+      "Bash(gofmt -e main.go)",
+      "Bash(gofmt -e /opt/lockd2/main.go)",
+      "Bash(crontab -l)",
+      "Bash(grep -v \"^ca$\\\\|^deploy$\\\\|^dnsapi$\\\\|^notify$\\\\|acme.sh\\\\|account\\\\|env\\\\|header\")",
+      "Bash(journalctl --since \"yesterday\" --until \"now\" -g \"acme|cert|ssl|letsencrypt|ispconfig\" --no-pager)",
+      "Bash(chown lockd2:lockd2 /etc/lockd2/auth_keys)",
+      "Bash(chmod 600 /etc/lockd2/auth_keys)",
+      "Bash(chown lockd2:lockd2 /etc/lockd2/audit.log)",
+      "Bash(chmod 600 /etc/lockd2/audit.log)",
+      "Bash(chown root:lockd2 /etc/lockd2/admin_key)",
+      "Bash(journalctl -u lockd2 -n 30 --no-pager)",
+      "Bash(journalctl *)",
+      "Bash(openssl x509 *)",
+      "Bash(curl *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh repo *)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(systemctl reload *)"
+    ]
+  }
+}

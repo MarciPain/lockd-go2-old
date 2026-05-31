@@ -1,0 +1,16 @@
+# lockd2 auth_keys – API kulcsok
+#
+# Formátum: <felhasználónév>:<sha256_hash_a_raw_keyből>
+#
+# Kulcs generálása:
+#   ./lockd2 -gen-key <felhasználónév>
+#
+# A kimeneti "Raw Key" megy a mobil appba / kliensbe.
+# Az "Auth Line" kerül ide.
+#
+# FIGYELEM: Soha ne tárold a nyers kulcsot ebben a fájlban!
+#           Csak a SHA256 hash-t tárold.
+
+alice:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+bob:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
+admin:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
